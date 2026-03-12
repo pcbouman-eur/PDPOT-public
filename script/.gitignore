@@ -1,0 +1,157 @@
+# --------------------------------------------------------------
+#   General Python / uv ignores
+# --------------------------------------------------------------
+
+# Byte‑compiled / optimized Python files
+# --------------------------------------------------------------
+__pycache__/
+*.py[cod]          # .pyc, .pyo, .pyd
+*$py.class         # Jython compiled classes
+
+# C extensions
+*.so
+
+# Distribution / packaging
+# --------------------------------------------------------------
+*.egg
+*.egg-info/
+dist/
+build/
+# If you use `uv build` (PEP 517) you still get a “dist/” folder.
+
+# Installer logs
+pip-log.txt
+pip-delete-this-directory.txt
+# uv may create temporary logs in the project root; ignore them too.
+uv.lock.log
+uv.lock.tmp
+
+# --------------------------------------------------------------
+#   uv‑specific artefacts
+# --------------------------------------------------------------
+
+# uv creates a hidden cache directory called ".uv" at the project root.
+# It stores wheels, source downloads, and other temporary data.
+.uv/
+
+# If you keep a per‑project virtual environment (highly recommended with uv)
+# the default name is ".venv".  You can change it via `uv venv -p …`,
+# but the default is still ".venv".
+.venv/
+# If you use a different name for the env (e.g. "env", "venv", ".env")
+# add it here as well.
+env/
+venv/
+# (Do NOT commit your virtual‑environment – it contains absolute paths.)
+
+# uv also stores a lock file (uv.lock).  This file **should be version‑controlled**,
+# because it pins the exact versions of every dependency.  Keep it out of the
+# ignore list – you want it in the repo.
+
+# --------------------------------------------------------------
+#   Testing / coverage artefacts
+# --------------------------------------------------------------
+
+# pytest cache
+.pytest_cache/
+# nose cache
+.noseids
+# unittest discover cache (Python 3.11+)
+__pycache__/
+
+# Coverage reports
+htmlcov/
+.coverage
+.coverage.*
+*.cover
+*.py,cover
+
+# MyPy type‑checker cache
+.mypy_cache/
+.dmypy.json
+dmypy.json
+
+# Pyright / Pylance cache
+pyrightconfig.json
+# (If you use a language server that writes a cache, add it here.)
+
+# --------------------------------------------------------------
+#   Documentation artefacts
+# --------------------------------------------------------------
+
+# Sphinx generated files
+docs/_build/
+# MkDocs build directory
+site/
+
+# --------------------------------------------------------------
+#   IDE / editor specific files
+# --------------------------------------------------------------
+
+# VS Code
+.vscode/
+# PyCharm / IntelliJ
+.idea/
+*.iml
+# Eclipse / PyDev
+.project
+.pydevproject
+
+# Sublime Text
+*.sublime-workspace
+*.sublime-project
+
+# Emacs
+*~
+\#*\#
+# Vim swap files
+*.swp
+*.swo
+
+# --------------------------------------------------------------
+#   OS generated files
+# --------------------------------------------------------------
+
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+
+# Windows
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# Linux
+*~
+
+# --------------------------------------------------------------
+#   Secrets / environment files (never commit)
+# --------------------------------------------------------------
+
+.env
+.env.*
+*.env
+*.local
+.secret
+# If you use dotenv, keep the template (e.g. .env.example) under version control,
+# but ignore the real .env file that contains secrets.
+
+# --------------------------------------------------------------
+#   Miscellaneous / optional
+# --------------------------------------------------------------
+
+# Jupyter Notebook checkpoints
+.ipynb_checkpoints/
+
+# Python profiling data
+.prof
+*.prof
+
+# Custom scripts / temporary files
+tmp/
+temp/
+*.tmp
+
+# End of .gitignore

@@ -1,0 +1,134 @@
+<project xmlns="http://maven.apache.org/POM/4.0.0"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <groupId>nl.eur.pdpot</groupId>
+    <artifactId>pdpot</artifactId>
+    <version>0.0.1-SNAPSHOT</version>
+    <packaging>pom</packaging>
+
+
+    <properties>
+        <!-- Project settings -->
+        <maven.compiler.release>17</maven.compiler.release>
+        <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+
+        <!-- License file -->
+        <license.file>${session.executionRootDirectory}/COPYRIGHT</license.file>
+
+        <!-- Build plugins -->
+        <maven.assembly.plugin.version>3.8.0</maven.assembly.plugin.version>
+        <maven.jar.plugin.version>3.1.0</maven.jar.plugin.version>
+        <git.commit-id.plugin.version>9.0.2</git.commit-id.plugin.version>
+        <maven.antrun.plugin.version>3.2.0</maven.antrun.plugin.version>
+        <maven.resources.plugin.version>3.4.0</maven.resources.plugin.version>
+        <maven.shade.plugin.version>3.6.1</maven.shade.plugin.version>
+
+        <!-- Dependency versions -->
+        <jackson.version>2.19.0</jackson.version>
+        <slf4j.version>2.0.17</slf4j.version>
+        <jgrapht.version>1.4.0</jgrapht.version>
+        <commons.math3.version>3.6.1</commons.math3.version>
+        <picocli.version>4.6.3</picocli.version>
+        <progressbar.version>0.10.2</progressbar.version>
+        <apache.poi.version>5.5.1</apache.poi.version>
+        <google.ortools.version>9.15.6755</google.ortools.version>
+        <javacv.version>1.5.13</javacv.version>
+        <thymeleaf.version>3.1.2.RELEASE</thymeleaf.version>
+        <treeprinter.version>3.2.1</treeprinter.version>
+    </properties>
+
+    <profiles>
+        <!-- Default profile: builds core modules without visualizer -->
+        <profile>
+            <id>default</id>
+            <activation>
+                <activeByDefault>true</activeByDefault>
+            </activation>
+            <modules>
+                <module>pdpot-analyze</module>
+                <module>pdpot-assign</module>
+                <module>pdpot-core</module>
+                <module>pdpot-tools</module>
+                <module>pdpot-visualizer</module>
+            </modules>
+        </profile>
+        <!-- All modules profile: includes visualizer with full dependencies -->
+        <profile>
+            <id>video</id>
+            <modules>
+                <module>pdpot-analyze</module>
+                <module>pdpot-assign</module>
+                <module>pdpot-core</module>
+                <module>pdpot-tools</module>
+                <module>pdpot-visualizer</module>
+                <module>pdpot-visualizer-video</module>
+            </modules>
+        </profile>
+    </profiles>
+
+    <dependencies>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-reload4j</artifactId>
+            <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-to-slf4j</artifactId>
+            <version>2.25.3</version>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>com.mycila</groupId>
+                <artifactId>license-maven-plugin</artifactId>
+                <version>4.2</version>   <!-- use the latest stable version -->
+                <configuration>
+                    <licenseSets>
+                        <licenseSet>
+                            <includes>
+                                <include>**/*.java</include>
+                            </includes>
+
+                            <header>${license.file}</header>
+                        </licenseSet>
+                    </licenseSets>
+                </configuration>
+
+                <!-- Run the plug‑in during the validate phase (before compilation) -->
+                <executions>
+                    <execution>
+                        <id>add-license-header</id>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>format</goal>
+                        </goals>
+                    </execution>
+
+                    <!-- Optional: a separate execution for CI that just checks -->
+                    <execution>
+                        <id>check-license-header</id>
+                        <phase>verify</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+</project>

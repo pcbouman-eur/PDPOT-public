@@ -1,0 +1,12 @@
+# Define line ends for particular file types
+*.java text eol=lf
+*.py text eol=lf
+*.xml text eol=lf
+*.json text eol=lf
+*.log text eol=lf
+*.toml text eol=lf
+*.lock text eol=lf
+*.sh text eol=lf
+Dockerfile text eol=lf
+
+*.xlsx binary
