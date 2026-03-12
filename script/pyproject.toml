@@ -19,7 +19,7 @@ dependencies = [
 ]
 
 [project.scripts]
-pdpot = "src.cli.main:main"
+pdpot-script = "src.cli.main:main"
 
 [build-system]
 requires = ["hatchling"]

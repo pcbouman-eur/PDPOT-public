@@ -689,7 +689,7 @@ def cmd_summary(args: argparse.Namespace) -> int:
 def main(argv: List[str] = sys.argv[1:]) -> int:
     """Main entry point for the CLI."""
     parser = argparse.ArgumentParser(
-        prog="pdpot", description="Data analysis pipeline for pdpot experiments."
+        prog="pdpot-script", description="Data analysis pipeline for pdpot experiments."
     )
 
     subparsers = parser.add_subparsers(dest="command", required=True)

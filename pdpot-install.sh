@@ -1,23 +1,32 @@
 #!/usr/bin/env bash
 #====================================================================
-# pdpot-installer.sh – Install pdpot‑tools and pdpot‑script
+# pdpot-installer.sh – Install / uninstall pdpot‑tools & pdpot‑script
 #
 #   Usage:
-#       ./pdpot-installer.sh [--mode MODE] [--install-dir DIR] [--help]
+#       ./pdpot-installer.sh [--mode MODE] [--install-dir DIR] [--uninstall] [--help]
 #
 #   Options
 #       --mode MODE        one of: local | docker | podman   (default: local)
 #       --install-dir DIR  directory where the wrappers and jars will be
 #                          placed (default: $HOME/.local)
+#       --uninstall        remove everything that was installed by this script.
+#                          When used, --mode is ignored.
 #       --help             display this help and exit
 #
-#   What it does
-#       * local   – builds the Java jar if it is missing, copies it,
-#                  creates a tiny wrapper that runs `java -jar …`,
-#                  and installs the Python tool via `uv tool install .`.
-#       * docker  – builds a Docker image called pdpot‑container and
-#                  installs two wrapper scripts that run `docker run …`.
-#       * podman  – same as docker but using podman.
+#   What the script does
+#       * **Install**
+#           - local   – builds the Java jar if missing, copies it,
+#                       creates a tiny wrapper that runs `java -jar …`,
+#                       and installs the Python tool via `uv tool install .`.
+#           - docker  – builds a Docker image called pdpot‑container and
+#                       installs two wrapper scripts that run `docker run …`.
+#           - podman  – same as docker but using podman.
+#
+#       * **Uninstall**
+#           - removes the wrapper scripts (`${INSTALL_DIR}/bin/pdpot-*`);
+#           - removes the copied JAR directory (`${INSTALL_DIR}/pdpot-tools`);
+#           - runs `uv tool uninstall pdpot-script` if `uv` is present;
+#           - (optional) removes the container image `pdpot-container`.
 #
 #   License: MIT (feel free to adapt)
 #====================================================================
@@ -30,11 +39,11 @@ IFS=$'\n\t'                     # sane field splitting
 # -----------------------------------------------------------------
 MODE="local"
 INSTALL_DIR="${HOME}/.local"
-# NOTE: adjust the name if your build produces a different jar
-JAR_SRC="java/pdpot-tools/target/pdpot-tools-0.0.1-SNAPSHOT-fatjar.jar"
+JAR_SRC="java/pdpot-tools/target/pdpot-tools-0.0.1-SNAPSHOT-fatjar.jar"   # adjust if your jar name changes
 JAR_NAME="$(basename "${JAR_SRC}")"
 PYTHON_PROJECT_DIR="script"
 WRAPPER_DIR="${INSTALL_DIR}/bin"
+UNINSTALL=false
 
 # -----------------------------------------------------------------
 # Helper functions
@@ -47,7 +56,30 @@ info() {
     printf "INFO: %s\n" "$*"
 }
 usage() {
-    sed -n '2,100p' "$0" | sed -e 's/^# //'
+    cat <<'EOF'
+pdpot-installer.sh – Install / uninstall pdpot‑tools & pdpot‑script
+
+Usage:
+    ./pdpot-installer.sh [--mode MODE] [--install-dir DIR] [--uninstall] [--help]
+
+Options:
+    --mode MODE        one of: local | docker | podman   (default: local)
+    --install-dir DIR  directory where the wrappers and jars will be placed
+                       (default: $HOME/.local)
+    --uninstall        remove everything that was installed by this script.
+                       When present, --mode is ignored.
+    --help             display this help and exit
+
+Examples:
+    # Normal install (default = local)
+    ./pdpot-installer.sh
+
+    # Docker‑based install
+    ./pdpot-installer.sh --mode docker
+
+    # Uninstall everything
+    ./pdpot-installer.sh --uninstall
+EOF
     exit 0
 }
 
@@ -66,6 +98,10 @@ while (( $# )); do
             [[ -z "${INSTALL_DIR}" ]] && die "--install-dir requires an argument"
             shift 2
             ;;
+        --uninstall)
+            UNINSTALL=true
+            shift
+            ;;
         --help|-h)
             usage
             ;;
@@ -75,39 +111,37 @@ while (( $# )); do
     esac
 done
 
-# Normalise the mode string
+# Normalise mode string (only matters if we are *installing*)
 MODE="$(tr '[:upper:]' '[:lower:]' <<<"${MODE}")"
-[[ "${MODE}" != "local" && "${MODE}" != "docker" && "${MODE}" != "podman" ]] \
-    && die "Invalid mode '${MODE}'. Choose from: local, docker, podman."
+if ! $UNINSTALL; then
+    [[ "${MODE}" != "local" && "${MODE}" != "docker" && "${MODE}" != "podman" ]] \
+        && die "Invalid mode '${MODE}'. Choose from: local, docker, podman."
+fi
 
-# Ensure the wrapper directory exists
+# Ensure wrapper directory exists (or will be removed on uninstall)
 mkdir -p "${WRAPPER_DIR}"
 
 # -----------------------------------------------------------------
-# 1️⃣  Local installation
+# ----------  INSTALL PATH  ----------------------------------------
 # -----------------------------------------------------------------
 install_local() {
-    # -----------------------------------------------------------------
-    # 1.1 Java tool – ensure we have a JAR (build it if missing)
-    # -----------------------------------------------------------------
+    # -------- Java tool – ensure we have a JAR (build it if missing) --------
     info "▶ Installing pdpot‑tools (local mode)"
 
-    # Check that a Java runtime (>=21) is present – needed for the wrapper later
+    # Java runtime (>=21) – needed for the wrapper later
     if ! command -v java >/dev/null; then
         die "Java runtime not found – please install Java 21 or newer."
     fi
     JAVA_VER=$(java -version 2>&1 | awk -F[\".] '/version/ {print $2}')
     (( JAVA_VER < 21 )) && die "Java version ${JAVA_VER} detected – Java 21+ required."
 
-    # -------------------------------------------------------------
     # Does the JAR already exist?
-    # -------------------------------------------------------------
     if [[ -f "${JAR_SRC}" ]]; then
         info "Found existing JAR at ${JAR_SRC}"
     else
         info "JAR not found – attempting to build it now."
 
-        # Verify Maven (or the Maven wrapper) is available
+        # Choose Maven command (wrapper or system Maven)
         if [[ -x "java/mvnw" ]]; then
             MAVEN_CMD="./mvnw"
         elif command -v mvn >/dev/null; then
@@ -116,13 +150,11 @@ install_local() {
             die "Neither Maven nor a Maven wrapper (mvnw) was found. Install Maven or add the wrapper."
         fi
 
-        # Run Maven in the java/ directory (quiet, non‑interactive)
         pushd "java" >/dev/null
         info "Running '${MAVEN_CMD} -B package' to build the JAR..."
         "${MAVEN_CMD}" -B package
         popd >/dev/null
 
-        # After the build, verify the JAR exists
         if [[ -f "${JAR_SRC}" ]]; then
             info "Build succeeded – JAR created at ${JAR_SRC}"
         else
@@ -130,33 +162,26 @@ install_local() {
         fi
     fi
 
-    # -------------------------------------------------------------
-    # 1.2 Copy JAR to the user‑local location
-    # -------------------------------------------------------------
+    # Copy JAR to user‑local location
     JAR_DEST_DIR="${INSTALL_DIR}/pdpot-tools"
     mkdir -p "${JAR_DEST_DIR}"
     cp -a "${JAR_SRC}" "${JAR_DEST_DIR}/${JAR_NAME}"
     info "Copied ${JAR_SRC} → ${JAR_DEST_DIR}/${JAR_NAME}"
 
-    # -------------------------------------------------------------
-    # 1.3 Create the wrapper script for pdpot-tools
-    # -------------------------------------------------------------
+    # Wrapper script for pdpot-tools
     TOOLS_WRAPPER="${WRAPPER_DIR}/pdpot-tools"
     cat >"${TOOLS_WRAPPER}" <<EOF
 #!/usr/bin/env bash
 # Wrapper for pdpot‑tools (installed by pdpot‑installer.sh)
-# Executes the shipped jar with the user‑provided arguments.
 exec java -jar "${JAR_DEST_DIR}/${JAR_NAME}" "\$@"
 EOF
     chmod +x "${TOOLS_WRAPPER}"
     info "Installed wrapper → ${TOOLS_WRAPPER}"
 
-    # -----------------------------------------------------------------
-    # 1.4 Python script tool
-    # -----------------------------------------------------------------
+    # -------- Python tool --------------------------------------------------
     info "▶ Installing pdpot‑script (local mode)"
 
-    # Check Python ≥ 3.11
+    # Python >=3.11
     if ! command -v python3 >/dev/null; then
         die "python3 not found – please install Python 3.11+."
     fi
@@ -165,21 +190,17 @@ EOF
     (( PY_VER_MAJOR < 3 || (PY_VER_MAJOR == 3 && PY_VER_MINOR < 11) )) \
         && die "Python version ${PY_VER_MAJOR}.${PY_VER_MINOR} detected – Python 3.11+ required."
 
-    # Check uv (the Python package manager)
+    # uv (Python package manager)
     if ! command -v uv >/dev/null; then
         die "uv not found – install it first (https://github.com/astral-sh/uv)."
     fi
 
-    # Run uv tool install – it puts the entry‑point script into ~/.local/bin
     pushd "${PYTHON_PROJECT_DIR}" >/dev/null
     uv tool install . --quiet
     popd >/dev/null
     info "uv tool installed – you should now have a \`pdpot-script\` command in ${HOME}/.local/bin"
 }
 
-# -----------------------------------------------------------------
-# 2️⃣  Container (Docker/Podman) installation
-# -----------------------------------------------------------------
 install_container() {
     local engine="$1"          # "docker" or "podman"
     local img_name="pdpot-container"
@@ -189,16 +210,14 @@ install_container() {
         die "${engine} not found – please install it or choose another mode."
     fi
 
-    # Build the image from the Dockerfile that lives in the repo root.
     "${engine}" build -t "${img_name}" . || die "Failed to build the ${engine} image."
 
-    # Create two tiny wrapper scripts that invoke the container
+    # Create wrapper scripts that invoke the container
     for cmd in pdpot-tools pdpot-script; do
         local wrapper_path="${WRAPPER_DIR}/${cmd}"
         cat >"${wrapper_path}" <<EOF
 #!/usr/bin/env bash
 # ${engine} wrapper for ${cmd} – installed by pdpot‑installer.sh
-# It mounts the current working directory into /data inside the container.
 exec ${engine} run -v "\$PWD":/data --rm "${img_name}" ${cmd} "\$@"
 EOF
         chmod +x "${wrapper_path}"
@@ -207,14 +226,70 @@ EOF
 }
 
 # -----------------------------------------------------------------
-# 3️⃣  Main entry point
+# ----------  UNINSTALL PATH  ---------------------------------------
+# -----------------------------------------------------------------
+uninstall_all() {
+    info "▶ Starting uninstall process"
+
+    # 1) Remove wrapper scripts (if they exist)
+    for wrapper in pdpot-tools pdpot-script; do
+        if [[ -f "${WRAPPER_DIR}/${wrapper}" ]]; then
+            rm -f "${WRAPPER_DIR}/${wrapper}"
+            info "Removed wrapper ${WRAPPER_DIR}/${wrapper}"
+        fi
+    done
+
+    # 2) Remove the copied JAR directory (local mode only)
+    if [[ -d "${INSTALL_DIR}/pdpot-tools" ]]; then
+        rm -rf "${INSTALL_DIR}/pdpot-tools"
+        info "Removed directory ${INSTALL_DIR}/pdpot-tools"
+    fi
+
+    # 3) Remove the uv‑installed Python entry point
+    if command -v uv >/dev/null; then
+        if uv tool list | grep -q '^pdpot-script$'; then
+            uv tool uninstall pdpot-script --quiet
+            info "uv tool 'pdpot-script' uninstalled"
+        else
+            info "uv tool 'pdpot-script' not found – nothing to uninstall"
+        fi
+    else
+        info "uv not installed – cannot remove uv‑tool, you may need to delete manually."
+    fi
+
+    # 4) Optionally remove container images (docker / podman)
+    if command -v docker >/dev/null && docker image inspect pdpot-container >/dev/null 2>&1; then
+        docker rmi -f pdpot-container >/dev/null 2>&1 && \
+            info "Removed Docker image pdpot-container"
+    fi
+    if command -v podman >/dev/null && podman image inspect pdpot-container >/dev/null 2>&1; then
+        podman rmi -f pdpot-container >/dev/null 2>&1 && \
+            info "Removed Podman image pdpot-container"
+    fi
+
+    # 5) Clean up empty wrapper directory (if now empty)
+    if [[ -d "${WRAPPER_DIR}" && -z "$(ls -A "${WRAPPER_DIR}")" ]]; then
+        rmdir "${WRAPPER_DIR}"
+        info "Removed empty wrapper directory ${WRAPPER_DIR}"
+    fi
+
+    info "Uninstall completed."
+}
+
+# -----------------------------------------------------------------
+#  MAIN
 # -----------------------------------------------------------------
 main() {
+    if $UNINSTALL; then
+        uninstall_all
+        exit 0
+    fi
+
     info "=== pdpot installer ==="
     info "Mode          : ${MODE}"
     info "Install dir   : ${INSTALL_DIR}"
     info "Wrapper dir   : ${WRAPPER_DIR}"
-    info "-------------------------------------"
+    info "--------------------------------------------"
 
     case "${MODE}" in
         local)
@@ -236,4 +311,3 @@ main() {
 }
 
 main "$@"
-
