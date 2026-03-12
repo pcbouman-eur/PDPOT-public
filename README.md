@@ -8,6 +8,6 @@ The Java code and experimental data were written manually without help from AI. 
 
 ## Licensing
 
-* The \[java](Java code) in this repository is licensed with the GNU Affero General Public License version 3.
-* The \[data](instance and solution data) in this repository is licensed with the Creative Commons Attribution-ShareAlike 4.0 International License
-* The \[script](script for data processing and analysis) in this repository is licensed with the Apache License version 2.0
+* The [java](Java code) in this repository is licensed with the GNU Affero General Public License version 3.
+* The [data](instance and solution data) in this repository is licensed with the Creative Commons Attribution-ShareAlike 4.0 International License
+* The [script](script for data processing and analysis) in this repository is licensed with the Apache License version 2.0
