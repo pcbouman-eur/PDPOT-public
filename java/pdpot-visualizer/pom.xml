@@ -32,6 +32,16 @@
 			<artifactId>picocli</artifactId>
 			<version>${picocli.version}</version>
 		</dependency>
+		<dependency>
+			<groupId>me.tongfei</groupId>
+			<artifactId>progressbar</artifactId>
+			<version>${progressbar.version}</version>
+		</dependency>
+		<dependency>
+			<groupId>com.madgag</groupId>
+			<artifactId>animated-gif-lib</artifactId>
+			<version>1.4</version>
+		</dependency>
 	</dependencies>
 
 </project>

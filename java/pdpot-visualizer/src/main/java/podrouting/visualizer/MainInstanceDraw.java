@@ -38,7 +38,7 @@ public class MainInstanceDraw implements Callable<Integer>, DynamicSubcommand {
             required = true)
     private File input;
 
-    @CommandLine.Option(names={"-o", "--output"}, description="")
+    @CommandLine.Option(names={"-o", "--output"}, description="Output image file name", required = true)
     private File output;
 
     @CommandLine.Option(names = {"-iw", "--width"}, paramLabel = "WIDTH", defaultValue = "1920",

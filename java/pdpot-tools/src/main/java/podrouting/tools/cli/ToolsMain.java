@@ -28,7 +28,9 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.ServiceLoader;
 
-@CommandLine.Command(mixinStandardHelpOptions = true,
+@CommandLine.Command(
+    name = "pdpot-tools",
+    mixinStandardHelpOptions = true,
     subcommands = {
         OrganizeMain.class,
         TopoDiffMain.class,
