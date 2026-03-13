@@ -36,6 +36,7 @@
         <javacv.version>1.5.13</javacv.version>
         <thymeleaf.version>3.1.2.RELEASE</thymeleaf.version>
         <treeprinter.version>3.2.1</treeprinter.version>
+        <gif.encoder.version>0.10.1</gif.encoder.version>
     </properties>
 
     <profiles>

@@ -1,6 +1,8 @@
 package podrouting.visualizer;
 
-import com.madgag.gif.fmsware.AnimatedGifEncoder;
+import com.squareup.gifencoder.GifEncoder;
+import com.squareup.gifencoder.Image;
+import com.squareup.gifencoder.ImageOptions;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
@@ -15,6 +17,7 @@ import podrouting.util.cli.DynamicSubcommand;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.io.File;
 import java.io.FileOutputStream;
 import java.io.IOException;
@@ -96,27 +99,30 @@ public class MainGifRender implements Callable<Integer>, DynamicSubcommand {
 
         log.info("Writing animated gif file {}", output);
         try (FileOutputStream out = new FileOutputStream(output); ProgressBar bar = progressBarBuilder.build()) {
-            AnimatedGifEncoder enc = new AnimatedGifEncoder();
-            enc.start(out);
-            enc.setDelay(delay);
-            enc.setRepeat(0);
+            GifEncoder enc = new GifEncoder(out, w, h, 0);
+            ImageOptions options = new ImageOptions();
             BufferedImage bi = new BufferedImage(w,h,BufferedImage.TYPE_INT_ARGB);
             Graphics g = bi.getGraphics();
             if(firstTimestep) {
                 g.setColor(Color.WHITE);
                 g.fillRect(0, 0, w, h);
                 core.drawStartFrame(g);
-                enc.addFrame(bi);
+                int[] flat = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
+                Image image = com.squareup.gifencoder.Image.fromRgb(flat, w);
+                enc.addImage(image, options);
             }
             do {
                 g.setColor(Color.WHITE);
                 g.fillRect(0, 0, w, h);
                 core.drawFrame(g);
-                enc.addFrame(bi);
+                int[] flat = ((DataBufferInt) bi.getRaster().getDataBuffer()).getData();
+                Image image = com.squareup.gifencoder.Image.fromRgb(flat, w);
+                enc.addImage(image, options);
                 core.incrementCurrentTime(timeStep);
                 bar.step();
             } while (core.getCurrentTime() <= maxTime + 1);
             g.dispose();
+            enc.finishEncoding();
         }
     }
 

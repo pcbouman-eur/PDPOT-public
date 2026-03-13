@@ -38,9 +38,9 @@
 			<version>${progressbar.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>com.madgag</groupId>
-			<artifactId>animated-gif-lib</artifactId>
-			<version>1.4</version>
+			<groupId>com.squareup</groupId>
+			<artifactId>gifencoder</artifactId>
+			<version>${gif.encoder.version}</version>
 		</dependency>
 	</dependencies>
 
