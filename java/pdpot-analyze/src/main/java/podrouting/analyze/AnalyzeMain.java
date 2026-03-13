@@ -20,6 +20,8 @@
 package podrouting.analyze;
 
 import picocli.CommandLine;
+import podrouting.model.AssignmentModelORTools;
+import podrouting.model.ORToolsSolverChoice;
 import podrouting.util.cli.DynamicSubcommand;
 
 import java.io.File;
@@ -27,7 +29,7 @@ import java.util.List;
 import java.util.concurrent.Callable;
 
 @CommandLine.Command(name = "spreadsheet", mixinStandardHelpOptions = true,
-        description = "Create an analysis spreadsheet from solution files")
+        description = "Create an analysis spreadsheet from solution files.")
 public class AnalyzeMain implements Callable<Integer>, DynamicSubcommand {
 
     @CommandLine.Option(names = {"-i", "--input"},
@@ -38,8 +40,14 @@ public class AnalyzeMain implements Callable<Integer>, DynamicSubcommand {
     @CommandLine.Option(names = {"-o", "--output"}, description = "Output .xlsx to write the analysis to")
     private File outputFile;
 
+    @CommandLine.Option(names = {"-s", "--solver"}, description = "Solver to be used by OR-tools. " +
+            "Default: ${DEFAULT-VALUE}. Possible options: ${COMPLETION-CANDIDATES}. " +
+            "Not all options may be available on your system.", defaultValue="SCIP")
+    private ORToolsSolverChoice solver;
+
     @Override
     public Integer call() throws Exception {
+
         SpreadsheetGenerator.generateSpreadsheet(inputDir, outputFile);
         return 0;
     }

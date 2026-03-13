@@ -42,6 +42,14 @@ import java.util.Map.Entry;
 public class AssignmentModelORTools {
 
 	private static final Logger log = LoggerFactory.getLogger(AssignmentModelORTools.class);
+    private static ORToolsSolverChoice SOLVER = ORToolsSolverChoice.SCIP;
+
+    public static void setSolver(ORToolsSolverChoice solver) {
+        if (solver == null) {
+            throw new IllegalArgumentException("Parameter 'solver' must not be null.");
+        }
+        AssignmentModelORTools.SOLVER = solver;
+    }
 
 	private Solution sol;
 	private final SolutionHelper helper;
@@ -101,7 +109,7 @@ public class AssignmentModelORTools {
         Loader.loadNativeLibraries();
         this.status = null;
 
-        model = new MPSolver("AssignmentModel", MPSolver.OptimizationProblemType.SCIP_MIXED_INTEGER_PROGRAMMING);
+        model = new MPSolver("AssignmentModel", SOLVER.getOptimizationProblemType());
 
 		vars = new LinkedHashMap<>();
 		predecessorVars = new LinkedHashMap<>();
