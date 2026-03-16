@@ -33,8 +33,6 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
 import java.util.*;
 import java.util.concurrent.Callable;
 import java.util.stream.Collectors;
@@ -45,14 +43,20 @@ public class SummarizeMain implements Callable<Integer> {
 
     public static Logger log = LoggerFactory.getLogger(SummarizeMain.class);
 
+    @CommandLine.Option(names={"-h", "--hash"}, description="Perform hash based comparison on instances ignoring metadata")
+    private boolean performHashing;
+
     @CommandLine.Option(names = {"-o", "--output"}, description="Output file to write report to")
     private File outputReport;
 
-    @CommandLine.Parameters(description = "Directories to scan for instance and/or solution files", arity = "1..*")
-    private List<File> directories;
+    @CommandLine.Parameters(description = "Directories or zip files to scan for instance and/or solution files", arity = "1..*")
+    private List<File> inputs;
 
-    private final Set<File> jsonFiles = new LinkedHashSet<>();
+    private final Set<Instance> uniqueInstances = new LinkedHashSet<>();
+    private final Set<IOUtils.Reference> jsonFiles = new LinkedHashSet<>();
     private final Set<String> uniqueInstanceUUIDs = new LinkedHashSet<>();
+    private final Map<String,Set<String>> solversPerInstanceUUID = new LinkedHashMap<>();
+    private final Map<String,Long> uniqueSolvers = new TreeMap<>();
     private final Map<Integer, Integer> vehicleCountToUniqueInstances = new LinkedHashMap<>();
     private final Map<Integer, Integer> passengerCountToUniqueInstances = new LinkedHashMap<>();
     private final SortedMap<Integer,Integer> uniqueVehicleCapacities = new TreeMap<>();
@@ -68,9 +72,10 @@ public class SummarizeMain implements Callable<Integer> {
     private int instancesWithSingleVehicleODPairs = 0;
     private int instancesWithMultipleVehicleODPairs = 0;
 
+
     @Override
-    public Integer call() {
-        directories.forEach(this::scanDirectory);
+    public Integer call() throws IOException {
+        inputs.forEach(this::scanDirectory);
         processFiles();
         String report = printStatistics();
         log.info("Summary statistics report:\n\n{}", report);
@@ -86,16 +91,22 @@ public class SummarizeMain implements Callable<Integer> {
 
     private void scanDirectory(File directory) {
         int old = jsonFiles.size();
-        if (!directory.exists() || !directory.isDirectory()) {
+        if (IOUtils.isZipFile(directory)) {
+            log.info("Scanning zip file {}", directory);
+            try {
+                jsonFiles.addAll(IOUtils.scanZipForJsonReferences(directory));
+            }
+            catch (IOException e) {
+                log.error("Error while scanning zip file {}", directory, e);
+            }
+        }
+        else if (!directory.exists() || !directory.isDirectory()) {
             log.warn("Directory does not exist or is not a directory: {}", directory);
             return;
         }
         log.info("Scanning directory {}", directory);
         try {
-            Files.walk(Paths.get(directory.toURI()))
-                .filter(path -> path.toString().endsWith(".json"))
-                .map(Path::toFile)
-                .forEach(jsonFiles::add);
+            jsonFiles.addAll(IOUtils.scanForFileReferences(directory));
         } catch (IOException e) {
             log.error("Failed to scan directory: {}", directory, e);
         }
@@ -107,23 +118,32 @@ public class SummarizeMain implements Callable<Integer> {
         ProgressBarBuilder progressBarBuilder = new ProgressBarBuilder()
                 .setTaskName("Processing files")
                 .setStyle(ProgressBarStyle.ASCII);
-        for (File file : ProgressBar.wrap(jsonFiles, progressBarBuilder)) {
+
+        for (IOUtils.Reference ref : ProgressBar.wrap(jsonFiles, progressBarBuilder)) {
+            String source = ref.source();
             try {
-                Instance instance = IOUtils.readInstance(file);
-                processInstance(instance, file.getAbsolutePath());
-            } catch (IOException e) {
-                try {
-                    Solution solution = IOUtils.readSolution(file);
-                    Instance instance = solution.getInstance();
-                    if (instance != null) {
-                        processInstance(instance, file.getAbsolutePath());
-                    } else {
-                        log.warn("Solution file {} has null instance", file.getAbsolutePath());
-                    }
-                } catch (IOException e2) {
-                    log.warn("File {} is not a valid instance or solution JSON file", file.getAbsolutePath());
+                if (ref.solution()) {
+                    processSolution(ref.readSolution(), source);
                 }
+                else {
+                    processInstance(ref.readInstance(), source);
+                }
+            } catch (IOException e) {
+                log.warn("File {} is not a valid instance or solution JSON file", source);
             }
+        }
+    }
+
+    private void processSolution(Solution solution, String sourceFile) {
+        Instance instance = solution.getInstance();
+        if (instance != null) {
+            processInstance(instance, sourceFile);
+            String uuid = instance.getMetadata().get("uuid").toString();
+            String solver = solution.getMetadata().get("solver").toString();
+            uniqueSolvers.merge(solver, 1L, Long::sum);
+            solversPerInstanceUUID.computeIfAbsent(uuid, ignored -> new TreeSet<>()).add(solver);
+        } else {
+            log.warn("Solution file {} has null instance", sourceFile);
         }
     }
 
@@ -137,6 +157,11 @@ public class SummarizeMain implements Callable<Integer> {
         if (uniqueInstanceUUIDs.add(uuid)) {
             totalUniqueInstances++;
             processUniqueInstance(instance);
+        }
+
+        if (performHashing) {
+            Instance derived = new Instance(instance, false);
+            uniqueInstances.add(derived);
         }
     }
 
@@ -202,6 +227,9 @@ public class SummarizeMain implements Callable<Integer> {
 
         sb.append("Total instances found: " + totalInstancesFound);
         sb.append("\nUnique instances (by UUID): " + totalUniqueInstances);
+        if (performHashing) {
+            sb.append("\nUnique instances (ignoring metadata): " + uniqueInstances.size());
+        }
 
         sb.append("\n\nInstances with a single vehicle origin: " + instancesWithSingleVehicleOrigin);
         sb.append("\nInstances with multiple vehicle origins: " + instancesWithMultipleVehicleOrigins);
@@ -238,6 +266,22 @@ public class SummarizeMain implements Callable<Integer> {
         sb.append("\nUnique timeStart/timeEnd pairs: " + uniqueTimeWindows.size());
         for (TimeWindowPair tw : sortedTimeWindows(uniqueTimeWindows)) {
             sb.append("\n  timeStart=" + tw.timeStart + ", timeEnd=" + tw.timeEnd);
+        }
+
+        if (!solversPerInstanceUUID.isEmpty()) {
+            sb.append("\n\n=== Solver Statistics ===");
+            for (var entry : uniqueSolvers.entrySet()) {
+                sb.append("\n "+entry.getKey()+" : " + entry.getValue()+" times");
+            }
+            Map<Integer,Long> counts = new TreeMap<>();
+            for (var entry : solversPerInstanceUUID.entrySet()) {
+                int count = entry.getValue().size();
+                counts.merge(count, 1L,  Long::sum);
+            }
+            sb.append("\n\n=== Unique Solvers per UUID ===");
+            for (var entry : counts.entrySet()) {
+                sb.append("\n "+entry.getKey()+" solvers : " + entry.getValue()+ " uuids");
+            }
         }
 
         return sb.toString();

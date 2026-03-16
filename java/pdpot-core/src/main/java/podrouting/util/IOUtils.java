@@ -20,12 +20,13 @@
 package podrouting.util;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.List;
-import java.util.Optional;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.util.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipFile;
 
@@ -70,6 +71,10 @@ public final class IOUtils {
 		om.writeValue(jsonFile, s);
 	}
 
+    public static boolean isZipFile(File file) {
+        return file.isFile() && file.getName().toLowerCase(Locale.ROOT).endsWith(".zip");
+    }
+
     public static List<ZipData<Instance>> readInstancesFromZip(File zipFile) throws IOException {
         return readZipFile(zipFile, Instance.class);
     }
@@ -80,6 +85,14 @@ public final class IOUtils {
 
     public record ZipData<E> (E object, String path, String filename, String parent) {}
 
+    private static boolean isSolution(String name) {
+        return name.toLowerCase(Locale.ROOT).endsWith(SOLUTION_POSTFIX);
+    }
+
+    private static boolean isInstance(String name) {
+        return name.toLowerCase(Locale.ROOT).endsWith(INSTANCE_POSTFIX);
+    }
+
     private static <E> List<ZipData<E>> readZipFile(File zipFile, Class<E> clz) throws IOException {
         ObjectMapper om = new ObjectMapper();
         List<ZipData<E>> result = new ArrayList<>();
@@ -87,7 +100,7 @@ public final class IOUtils {
             Enumeration<? extends ZipEntry> entries = zip.entries();
             while (entries.hasMoreElements()) {
                 ZipEntry entry = entries.nextElement();
-                if (!entry.isDirectory() && entry.getName().endsWith(".json")) {
+                if (!entry.isDirectory() && isInstance(entry.getName())) {
                     String path = entry.getName();
                     try (InputStream in = zip.getInputStream(entry)) {
                         E obj = om.readValue(in, clz);
@@ -107,5 +120,94 @@ public final class IOUtils {
         }
         return result;
     }
-	
+
+    public static List<FileReference> scanForFileReferences(File directory) throws IOException {
+        return Files.walk(Paths.get(directory.toURI()))
+            .map(IOUtils::toFileReference)
+            .filter(Optional::isPresent)
+            .map(Optional::get)
+            .toList();
+    }
+
+    public static List<ZipReference> scanZipForJsonReferences(File zipFile) throws IOException {
+        List<ZipReference> result = new ArrayList<>();
+        try (ZipFile zip = new ZipFile(zipFile)) {
+            Enumeration<? extends ZipEntry> entries = zip.entries();
+            while (entries.hasMoreElements()) {
+                ZipEntry entry = entries.nextElement();
+                if (!entry.isDirectory() && isSolution(entry.getName())) {
+                    ZipReference ref = new ZipReference(zipFile, entry.getName(), true);
+                    result.add(ref);
+                }
+                else if (!entry.isDirectory() && isInstance(entry.getName())) {
+                    ZipReference ref = new ZipReference(zipFile, entry.getName(), false);
+                    result.add(ref);
+                }
+            }
+        }
+        return result;
+    }
+
+    private static Optional<FileReference> toFileReference(Path p) {
+        if (isSolution(p.toString())) {
+            return Optional.of(new FileReference(p.toFile(), true));
+        }
+        if (isInstance(p.toString())) {
+            return Optional.of(new FileReference(p.toFile(), false));
+        }
+        return Optional.empty();
+    }
+    public sealed interface Reference permits ZipReference, FileReference {
+        String source();
+        boolean solution();
+
+        <E> E read(Class<E> clz) throws IOException;
+
+
+        default Instance readInstance() throws IOException {
+            if (solution()) {
+                return readSolution().getInstance();
+            }
+            return read(Instance.class);
+        }
+
+        default Solution readSolution() throws IOException {
+            if (!solution()) {
+                throw new IllegalStateException("This is not a reference a solution file");
+            }
+            return read(Solution.class);
+        }
+    }
+    public record ZipReference(File zipFile, String entryName, boolean solution) implements Reference {
+        @Override
+        public String source() {
+            return zipFile.getAbsolutePath()+":"+entryName;
+        }
+
+        @Override
+        public <E> E read(Class<E> clz) throws IOException {
+            ObjectMapper om = new ObjectMapper();
+            try (ZipFile zip = new ZipFile(zipFile)) {
+                try (InputStream is = zip.getInputStream(zip.getEntry(entryName))) {
+                    return om.readValue(is, clz);
+                }
+            }
+        }
+    }
+
+    public record FileReference(File file, boolean solution) implements Reference {
+        @Override
+        public String source() {
+            return file.getAbsolutePath();
+        }
+
+        public <E> E read(Class<E> clz) throws IOException {
+            ObjectMapper om = new ObjectMapper();
+            try (InputStream is = new FileInputStream(file)) {
+                return om.readValue(is, clz);
+            }
+        }
+
+    }
+
 }

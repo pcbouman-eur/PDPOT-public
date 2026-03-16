@@ -21,14 +21,7 @@ package podrouting.data;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.TreeMap;
+import java.util.*;
 
 import org.jgrapht.GraphPath;
 import org.jgrapht.alg.interfaces.KShortestPathAlgorithm;
@@ -43,7 +36,6 @@ import com.fasterxml.jackson.annotation.JsonCreator;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
 import podrouting.data.timed.ArcPurpose;
 import podrouting.data.timed.Path;
@@ -116,7 +108,11 @@ public class Instance {
 		}
 	}
 
-	public Instance(Instance other) {
+    public Instance(Instance other) {
+        this(other, true);
+    }
+
+	public Instance(Instance other, boolean copyMetadata) {
 		this();
 
 		other.getLocations().forEach(this::addLocation);
@@ -132,7 +128,9 @@ public class Instance {
 		this.drivingPenalty = other.drivingPenalty;
 		this.strictStopping = other.strictStopping;
 		this.strictStoppingAtDestination = other.strictStoppingAtDestination;
-		this.metadata.putAll(other.metadata);
+        if (copyMetadata) {
+            this.metadata.putAll(other.metadata);
+        }
 	}
 
 	public Instance(Instance other, List<Passenger> passengers, List<Vehicle> vehicles) {
@@ -577,4 +575,39 @@ public class Instance {
 	public double getPassengersPerVehicle() {
 		return (1d * passengers.size()) / vehicles.size();
 	}
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Instance instance)) return false;
+        return Double.compare(platooningDiscountFactor, instance.platooningDiscountFactor) == 0
+                && Double.compare(transferOutsidePenalty, instance.transferOutsidePenalty) == 0
+                && Double.compare(drivingPenalty, instance.drivingPenalty) == 0
+                && Double.compare(arriveEarlyPenalty, instance.arriveEarlyPenalty) == 0
+                && Double.compare(rejectionPenalty, instance.rejectionPenalty) == 0
+                && strictStopping == instance.strictStopping
+                && allowInsideTransfers == instance.allowInsideTransfers
+                && strictStoppingAtDestination == instance.strictStoppingAtDestination
+                && Objects.equals(network, instance.network)
+                && Objects.equals(passengers, instance.passengers)
+                //&& Objects.equals(vehicles, instance.vehicles)
+                && Objects.equals(metadata, instance.metadata);
+    }
+
+    @Override
+    public int hashCode() {
+        return Objects.hash(
+                network,
+                passengers,
+                //vehicles,
+                platooningDiscountFactor,
+                transferOutsidePenalty,
+                drivingPenalty,
+                arriveEarlyPenalty,
+                rejectionPenalty,
+                strictStopping,
+                allowInsideTransfers,
+                strictStoppingAtDestination,
+                metadata
+        );
+    }
 }

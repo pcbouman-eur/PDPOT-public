@@ -89,50 +89,29 @@ public class Vehicle {
 	public double getVehicleCost() {
 		return vehicleCost;
 	}
-	
+
+    @Override
+    public boolean equals(Object o) {
+        if (!(o instanceof Vehicle vehicle)) return false;
+        return Double.compare(range, vehicle.range) == 0
+                && id == vehicle.id
+                && capacity == vehicle.capacity
+                && repeatable == vehicle.repeatable
+                && Double.compare(vehicleCost, vehicle.vehicleCost) == 0
+                && Objects.equals(origin, vehicle.origin)
+                && Objects.equals(destination, vehicle.destination);
+    }
+
+    private int computeHash() {
+        return Objects.hash(range, id, capacity, origin, destination, repeatable, vehicleCost);
+    }
+
     @Override
     public int hashCode() {
     	return hashCache;
     }
-    
-    private int computeHash() {
-        int hash = 7;
-        hash = 89 * hash + Long.hashCode(Double.doubleToLongBits(this.range));
-        hash = 89 * hash + this.id;
-        hash = 89 * hash + this.capacity;
-        hash = 89 * hash + Objects.hashCode(this.origin);
-        hash = 89 * hash + Objects.hashCode(this.destination);
-        hash = 89 * hash + Boolean.hashCode(repeatable);
-        hash = 89 * hash + Long.hashCode(Double.doubleToLongBits(this.vehicleCost));
-        return hash;
-    }
 
-    @Override
-    public boolean equals(Object obj) {
-            if (this == obj) {
-                    return true;
-            }
-            if (obj == null) {
-                    return false;
-            }
-            if (getClass() != obj.getClass()) {
-                    return false;
-            }
-            final Vehicle other = (Vehicle) obj;
-            if (Double.doubleToLongBits(this.range) != Double.doubleToLongBits(other.range)) {
-                    return false;
-            }
-            if (this.id != other.id) {
-                    return false;
-            }
-            if (this.capacity != other.capacity) {
-                    return false;
-            }
-            if (!Objects.equals(this.origin, other.origin)) {
-                    return false;
-            }
-        return Objects.equals(this.destination, other.destination);
-    }
+
 
     @Override
     public String toString() {
