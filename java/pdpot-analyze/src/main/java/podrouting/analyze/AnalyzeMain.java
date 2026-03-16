@@ -19,6 +19,8 @@
  */
 package podrouting.analyze;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import picocli.CommandLine;
 import podrouting.model.AssignmentModelORTools;
 import podrouting.model.ORToolsSolverChoice;
@@ -47,7 +49,7 @@ public class AnalyzeMain implements Callable<Integer>, DynamicSubcommand {
 
     @Override
     public Integer call() throws Exception {
-
+        AssignmentModelORTools.setSolver(solver);
         SpreadsheetGenerator.generateSpreadsheet(inputDir, outputFile);
         return 0;
     }

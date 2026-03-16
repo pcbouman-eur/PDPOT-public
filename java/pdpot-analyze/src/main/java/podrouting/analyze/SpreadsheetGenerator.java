@@ -276,8 +276,8 @@ public class SpreadsheetGenerator {
 					solStats.getTotalDrivingDistance(),
 					solStats.getAllPassengerTransportRatio(),
 					solStats.getServicedPassengerTransportRatio(),
-                    insideTransfers >= 0 ? insideTransfers / i.getPassengers().size() : Double.NaN,
-                    insideTransfers >= 0 ? insideTransfers / solStats.getServicedPassengers() : Double.NaN
+                    insideTransfers >= 0 ? insideTransfers*1d / i.getPassengers().size() : Double.NaN,
+                    insideTransfers >= 0 ? insideTransfers*1d / solStats.getServicedPassengers() : Double.NaN
 			));
 			writeCells(row, data.toArray());
 		}

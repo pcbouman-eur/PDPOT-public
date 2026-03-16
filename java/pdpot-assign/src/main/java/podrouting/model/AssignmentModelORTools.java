@@ -48,6 +48,7 @@ public class AssignmentModelORTools {
         if (solver == null) {
             throw new IllegalArgumentException("Parameter 'solver' must not be null.");
         }
+        log.info("Setting solver for the seat assignment model to {}", solver);
         AssignmentModelORTools.SOLVER = solver;
     }
 

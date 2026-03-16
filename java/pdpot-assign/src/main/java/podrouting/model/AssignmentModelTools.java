@@ -37,6 +37,9 @@ public class AssignmentModelTools {
     }
 
     public static OptionalInt getAssignmentValue(Solution sol) {
+        if (!sol.getInstance().isAllowInsideTransfers()) {
+            return OptionalInt.of(0);
+        }
         return AssignmentModelORTools.getAssignmentValue(sol);
     }
 
