@@ -26,6 +26,7 @@ import java.util.Map.Entry;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import me.tongfei.progressbar.DelegatingProgressBarConsumer;
 import me.tongfei.progressbar.ProgressBar;
 import me.tongfei.progressbar.ProgressBarBuilder;
 import me.tongfei.progressbar.ProgressBarStyle;
@@ -151,6 +152,7 @@ public class SpreadsheetGenerator {
 
             ProgressBarBuilder progressBarBuilder = new ProgressBarBuilder()
                     .setTaskName("Writing solution rows")
+					.setConsumer(new DelegatingProgressBarConsumer(log::info))
                     .setStyle(ProgressBarStyle.ASCII);
 			for (Entry<String,Solution> e : ProgressBar.wrap(solutions.entrySet(), progressBarBuilder)) {
 				String f = e.getKey();
