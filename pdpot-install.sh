@@ -28,7 +28,6 @@
 #           - runs `uv tool uninstall pdpot-script` if `uv` is present;
 #           - (optional) removes the container image `pdpot-container`.
 #
-#   License: MIT (feel free to adapt)
 #====================================================================
 
 set -euo pipefail                # abort on errors, undefined vars, pipefails

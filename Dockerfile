@@ -28,5 +28,6 @@ RUN pipx install --global uv==0.10.8
 WORKDIR /install
 COPY . .
 RUN chmod +x ./pdpot-install.sh && ./pdpot-install.sh
+RUN chmod +x ./pdpot-replicate.sh && cp pdpot-replicate.sh $HOME/.local/bin/pdpot-replicate
 
 WORKDIR /data
