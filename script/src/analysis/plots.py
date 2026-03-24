@@ -19,7 +19,7 @@ plt.rcParams.update(
     {
         "pgf.texsystem": "pdflatex",
         "font.family": "serif",
-        "text.usetex": True,
+        "text.usetex": False,
         "pgf.rcfonts": False,
     }
 )
