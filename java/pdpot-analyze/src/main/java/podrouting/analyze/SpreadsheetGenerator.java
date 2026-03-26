@@ -243,7 +243,7 @@ public class SpreadsheetGenerator {
 				data.add(sol.getMetadata().getOrDefault(key, ""));
 			}
 
-			int insideTransfers = AssignmentModelTools.getAssignmentValue(sol).orElse(-1);
+			double insideTransfers = AssignmentModelTools.getAssignmentValue(sol).orElse(-1);
 			data.addAll(Arrays.asList(
 					attemptSplit(filename, 1), attemptSplit(filename, 2),
 					i.getLocations().size(), i.getRoads().size(), i.getPassengers().size(), i.getVehicles().size(), 
