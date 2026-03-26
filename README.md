@@ -23,10 +23,9 @@ Our instances can be found in [/data/instances](/data/instances).
 
 The road networks in our instances are based on artificially generated road networks, which were generated with an approach due to [Courtat et al.](https://doi.org/10.1103/PhysRevE.83.036106), capturing a snapshot during the generation process at either the 8th, 10th, 12th, 15th or 20th iteration of the process. This way we obtain networks of five different network sizes.
 
-<figure align="center">
-<img src="/docs/networks.png" alt="Diagram showing ten networks each with 5 different size variants" width="50%" style="display:block;margin:auto;">
-<figcaption>The ten different networks we used, each with 5 size variants. The colors show which roads are added with increasing network size for each of the networks.</figcaption>
-</figure>
+| ![Diagram showing ten networks each with 5 different size variants](/docs/networks.png) |
+|:--:|
+| The ten different networks we used, each with 5 size variants. The colors show which roads are added with increasing network size for each of the networks. |
 
 The demand and supply sets in our instances contain either 10 or 15 passenger requests (small instances), 2 or 3 vehicles (small instances), 50 or 60 passenger requests (large instances), and 10 or 12 vehicles (large instances). All vehicles have seat capacity 4. There 600 small instances in total, and 600 large instances in total.
 Instances for which the supply or demand set is a subset of those of another instance are linked by a `derivedFrom` metadata-field. This allows to measure the pairwise impact of increasing or decreasing the demand and/or supply set of an instance.
