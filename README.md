@@ -1,6 +1,9 @@
 # Pickup and Delivery Problem with Online Transfers (PDPOT)
 
-<!-- Include animated gif here -->
+| ![Animation showing how multiple vehicles transport passengers to their destination](/docs/graph_8_15_0.1_1_var-3_pas-50_veh-12.gif) |
+|:--:|
+| Visualization of the MIP solution for the PDPOT instance file `graph_8_15_0.1_1_var-3_pas-50_veh-12.gif`. Modular vehicles are rectangles, passengers are cirles. White passengers are waiting to be transported, black passengers have arrived at their destination, and in-transit passengers have the color of the first vehicle they enter. The destination of passengers is indicated via the small dotted lines. |
+
 
 ## Introduction
 
