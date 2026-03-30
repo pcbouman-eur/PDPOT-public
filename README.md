@@ -20,6 +20,12 @@ Alternatively, passengers can leave a vehicle to perform an *outside transfer*, 
 The main objective of the problem is to service as many passengers as possible, with additional objectives to bring passengers to their destinations as soon as possible and to minimize the distance the vehicles drive (with a small 'platooning' bonus if they drive together).
 We solve the problem in two phases: first we determine the routes and times for both vehicles and passengers, ensuring that there is sufficient capacity in all vehicles to service the selected passenger requests. Then, we determine an exact seat assignment based on the routes and times, minimizing the number of inside transfers for the serviced passengers.
 
+## Attribution
+
+If you find this repository useful, we kindly request that you refer to our pre-print or a possible future published article on this topic.
+
+<!-- Reference details to be added once they are there -->
+
 ## Instances
 
 Our instances can be found in [/data/instances](/data/instances).
