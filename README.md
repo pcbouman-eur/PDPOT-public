@@ -53,10 +53,46 @@ The exact structure of our solutions is defined in our Java code, mapped using [
 
 Note that our solutions do not contain the exact *seat assignment*: our models only enforce that there is sufficient capacity. The Java code in this capacity, in particular the `pdpot-assign` module contains a model that minimizes the number of inside transfers by assigning vehicles and seats to passengers for every step of their routes.
 
+## Easy Reproduction with Docker or Podman
+
+For the sake of convenience, we provide a single script that can perform the full analysis pipeline of processing our raw `.json` solution files, and output the main tables and figures in
+our pre-print paper. On Windows systems, having [Docker Desktop installed](https://www.docker.com) should allow you to run the `docker-replicate.bat` script to perform our full analysis pipeline.
+On Linux, with either Docker or Podman installed, the script `docker-replicate.sh` can be used for this.
+
+1. First, a docker image is created from the [Dockerfile](/Dockerfile), which installs the relevant Java, Python and LaTeX dependendencies. Then, all Java source files are compiled and packaged. Both the Java CLI tool and the Python analysis scripts are installed as the commands `pdpot-tools` and `pdpot-script` inside the image.
+2. Then, the raw solution files in `/data/solutions` are analyzed, the assignment model is solved for all of them, and relevant `.xlsx` spreadsheet files are written to `/output/sheets` (note that solving the assignment model for larger instances can still take minutes per instance, so this step may take one or more hours to complete).
+3. The Python based analysis scripts in `/script` are used to convert the aggregated `.xlsx` files to relevant LaTeX tables and figures, and written to `/output/tex`
+4. A file `/output/tex/main.tex` is created an compiled to `/output/tex/main.pdf` with the main tables and figures from our preprint.
+
+Do note that the final image file will be 1.9GB, so you may want to clean it up after you are done with it.
+
+## Java Code (core, assignment-solver, analysis, visualizer)
+
+The Java code, found in [/java](/java) is the main project implemented for our research. Our solvers (currently not this in the repository) are based on the core library that manages 
+both instance and solution data, and provides many methods to read and write `.json` files with this data. 
+Additionally, this repository includes an optimization model that can be used to determine the exact *inside transfers* from a solution file, in [/java/pdpot-assign](/java/pdpot-assign).
+A tool tast can read a directory or zip file containing multiple solution files and output a spreadsheet with the important features is implemented in [/java/pdpot-analyze](/java/pdpot-analyze).
+Furterhmore, we have numerous way to create animations and visualizations using the tool implemented in [/java/pdpot-visualizer](/java/pdpot-visualizer).
+Finally, all our Java based tooling can be packaged into a single runnable jar-file that provides a command line interface to all these tools in [/java/pdpot-tools](/java/pdpot-tools).
+
+The setup of the project is a modular maven project. With a sufficiently modern version of maven and a Java OpenJDK (Java 17 is the minimum, but recent tests used Java 21), all tooling can be build by running `mvn package` in the `/java` directory. The command line fat jar then appears in `/java/pdpot-tools/target`.
+
+Alternatively, the approach using Docker or Podman can be used alternatively.
+
+## Python Scripts to generate LaTeX tables and figures
+
+The code in [/script](/script) is a Python project (managed by the [uv tool](https://docs.astral.sh/uv/)) that can be used to create figures and tables from the aggregated spreadsheet files outputted by the spreadsheet tool in the Java side of the project. In particular, these script create:
+
+1. tables that provide the pairwise distributions of the impact of forbidding inside transfers. These consider the following measures: the number of outside transfers, the service fraction (fraction of serviced requests), the allPassengersTransportRatio (the total distance driven by the vehicles divided by the total number of requests), and the servicedPassengerTransportRatio (the total distance driven by vehicles divided by the number of serviced requests).
+2. a table that considerd the pairwise differences if we remove vehicles or passengers requests from an instance. This includes the serviceFraction, insideTransferRatio (number of insides transfers divided by the total number of requests), and the allPassengerTransportRation and servicedPassengerTransportRatio.
+3. tables comparing the different solution approaches. This includes the MIP gap, and how often either the MIP approach or Column Generation approach is better with respect to runtime or solution quality.
+4. distribution plots of the runtimes and solution qualities for the different solution approaches and the two types of instances (small and large).
+
+These tools can be used separately by calling `uv pdpot-script` from the `/script` directory, assuming the relevant version 
 
 ## Use of AI
 
-The Java code and experimental data were written manually without help from AI. The Python scripts for data processing were produced with extensive help of a qwen3-coder-next model called from a Cline plugin, rewriting some original dirty handcrafted scripts. The scripts to run replications and install commands were created with help from AI.
+The Java code and experimental data were written manually without help from AI. The Python scripts for data processing were produced with extensive help of a qwen3-coder-next model called from a Cline plugin, rewriting some original dirty handcrafted scripts. The scripts to run replications and install commands were created with help from AI. 
 
 ## Licensing
 
