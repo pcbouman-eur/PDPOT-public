@@ -8,11 +8,11 @@
 ## Introduction
 
 This is a repository with instances, solutions and code for the Pickup and Delivery Problem with Online Transfers (PDPOT).
-Currently, the code does not contain our main solvers, but these may be added at a later moment when our paper is accept for publication.
+Currently, the code does not contain our main solvers, but these may be added at a later moment when our paper is accepted for publication.
 
 The Pick and Delivery Problem with Online Transfers is inspired by prototype vehicles from [Next future mobiility](https://www.youtube.com/watch?v=99XH1vbn4Xk)
 An instance has a road network, with parking locations, stop locations, and crossing location.
-The demand set contains passenger requests with and origin and destination.
+The demand set contains passenger requests with an origin and destination.
 The supply set contains modular vehicles that have a seat capacity.
 Time is discretized into time units, and when multiple vehicles travel the same road in the same direction at the same time,
 passengers can perform *inside transfers* between those vehicles while they are driving.
@@ -36,16 +36,16 @@ The road networks in our instances are based on artificially generated road netw
 |:--:|
 | The ten different networks we used, each with 5 size variants. The colors show which roads are added with increasing network size for each of the networks. |
 
-The demand and supply sets in our instances contain either 10 or 15 passenger requests (small instances), 2 or 3 vehicles (small instances), 50 or 60 passenger requests (large instances), and 10 or 12 vehicles (large instances). All vehicles have seat capacity 4. There 600 small instances in total, and 600 large instances in total.
+The demand and supply sets in our instances contain either 10 or 15 passenger requests (small instances), 2 or 3 vehicles (small instances), 50 or 60 passenger requests (large instances), and 10 or 12 vehicles (large instances). All vehicles have seat capacity 4. There are 600 small instances in total, and 600 large instances in total.
 Instances for which the supply or demand set is a subset of those of another instance are linked by a `derivedFrom` metadata-field. This allows to measure the pairwise impact of increasing or decreasing the demand and/or supply set of an instance.
-Additionally, for each instance there is a `forbid` counterpart, where it is not allowed to use any *inside transfers* at all. This way, we can perform pairwise comparisons of allowing inside transfers, compared to a more traditional setup with shared taxis.
+Additionally, for each instance there is a `forbid` counterpart, where it is not allowed to use *inside transfers* at all. This way, we can perform pairwise comparisons of allowing inside transfers, compared to a more traditional setup with shared taxis.
 
-All instances are stored as `.json` files. Each individual file contains all necessary data for the instance: the road network, the set of passenger requests, the set of vehicles, the parameters and settings related to the objective, and possibly meta-data. Each instance also has a [universally unique identiefier (UUID)](https://en.wikipedia.org/wiki/Universally_unique_identifier) stored in it's metadata, so it can be easily identified.
+All instances are stored as `.json` files. Each individual file contains all necessary data for the instance: the road network, the set of passenger requests, the set of vehicles, the parameters and settings related to the objective, and possibly meta-data. Each instance also has a [universally unique identifier (UUID)](https://en.wikipedia.org/wiki/Universally_unique_identifier) stored in it's metadata, so it can be easily identified.
 The exact structure of our instances is defined in our Java code, mapped using [Jackson annotations](https://github.com/FasterXML/jackson-databind). See [/java/pdpot-core/src/main/java/podrouting/data/Instance.java](/java/pdpot-core/src/main/java/podrouting/data/Instance.java) for details.
 
 ## Solutions
 
-In our research we implemented to solution methods for this problem (these are currently not included in this repository): a full MIP formulation that can be used to solved the problem directly, and a column generation approach that is a root-node heuristic based on generating routes for both vehicles and passenger requests.
+In our research we implemented two solution methods for this problem (these are currently not included in this repository): a full MIP formulation that can be used to solved the problem directly, and a column generation approach that is a root-node heuristic based on generating routes for both vehicles and passenger requests.
 Our solutions can be found in six zip-files stored in [/data/solutions](/data/solutions):
 
 - `small-regular-mip.zip`: contains solutions from the direct MIP solver for the small instances
@@ -68,7 +68,7 @@ For the sake of convenience, we provide a single script that can perform the ful
 our pre-print paper. On Windows systems, having [Docker Desktop installed](https://www.docker.com) should allow you to run the `docker-replicate.bat` script to perform our full analysis pipeline.
 On Linux, with either Docker or Podman installed, the script `docker-replicate.sh` can be used for this.
 
-1. First, a docker image is created from the [Dockerfile](/Dockerfile), which installs the relevant Java, Python and LaTeX dependendencies. Then, all Java source files are compiled and packaged. Both the Java CLI tool and the Python analysis scripts are installed as the commands `pdpot-tools` and `pdpot-script` inside the image.
+1. First, a docker image is created from the [Dockerfile](/Dockerfile), which installs the relevant Java, Python and LaTeX dependencies. Then, all Java source files are compiled and packaged. Both the Java CLI tool and the Python analysis scripts are installed as the commands `pdpot-tools` and `pdpot-script` inside the image.
 2. Then, the raw solution files in `/data/solutions` are analyzed, the assignment model is solved for all of them, and relevant `.xlsx` spreadsheet files are written to `/output/sheets` (note that solving the assignment model for larger instances can still take minutes per instance, so this step may take one or more hours to complete).
 3. The Python based analysis scripts in `/script` are used to convert the aggregated `.xlsx` files to relevant LaTeX tables and figures, and written to `/output/tex`
 4. A file `/output/tex/main.tex` is created an compiled to `/output/tex/main.pdf` with the main tables and figures from our preprint.
@@ -80,8 +80,8 @@ Do note that the final image file will be 1.9GB, so you may want to clean it up 
 The Java code, found in [/java](/java) is the main project implemented for our research. Our solvers (currently not this in the repository) are based on the core library that manages 
 both instance and solution data, and provides many methods to read and write `.json` files with this data. 
 Additionally, this repository includes an optimization model that can be used to determine the exact *inside transfers* from a solution file, in [/java/pdpot-assign](/java/pdpot-assign).
-A tool tast can read a directory or zip file containing multiple solution files and output a spreadsheet with the important features is implemented in [/java/pdpot-analyze](/java/pdpot-analyze).
-Furterhmore, we have numerous way to create animations and visualizations using the tool implemented in [/java/pdpot-visualizer](/java/pdpot-visualizer).
+A tool that can read a directory or zip file containing multiple solution files and output a spreadsheet with the important features is implemented in [/java/pdpot-analyze](/java/pdpot-analyze).
+Furterhmore, we have numerous ways to create animations and visualizations using the tool implemented in [/java/pdpot-visualizer](/java/pdpot-visualizer).
 Finally, all our Java based tooling can be packaged into a single runnable jar-file that provides a command line interface to all these tools in [/java/pdpot-tools](/java/pdpot-tools).
 
 The setup of the project is a modular maven project. With a sufficiently modern version of maven and a Java OpenJDK (Java 17 is the minimum, but recent tests used Java 21), all tooling can be build by running `mvn package` in the `/java` directory. The command line fat jar then appears in `/java/pdpot-tools/target`.
