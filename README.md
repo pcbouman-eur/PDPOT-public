@@ -10,7 +10,7 @@
 This is a repository with instances, solutions and code for the Pickup and Delivery Problem with Online Transfers (PDPOT).
 Currently, the code does not contain our main solvers, but these may be added at a later moment when our paper is accepted for publication.
 
-The Pick and Delivery Problem with Online Transfers is inspired by prototype vehicles from [Next future mobiility](https://www.youtube.com/watch?v=99XH1vbn4Xk)
+The Pick and Delivery Problem with Online Transfers is inspired by prototype vehicles from [Next future mobility](https://www.youtube.com/watch?v=99XH1vbn4Xk)
 An instance has a road network, with parking locations, stop locations, and crossing location.
 The demand set contains passenger requests with an origin and destination.
 The supply set contains modular vehicles that have a seat capacity.
