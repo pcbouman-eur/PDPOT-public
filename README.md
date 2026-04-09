@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/1179722798.svg)](https://doi.org/10.5281/zenodo.19480901)
+
 # Pickup and Delivery Problem with Online Transfers (PDPOT)
 
 | ![Animation showing how multiple vehicles transport passengers to their destination](/docs/graph_8_15_0.1_1_var-3_pas-50_veh-12.gif) |
