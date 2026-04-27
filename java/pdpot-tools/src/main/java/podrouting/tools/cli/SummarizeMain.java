@@ -27,6 +27,9 @@ import org.slf4j.LoggerFactory;
 
 import picocli.CommandLine;
 import podrouting.data.*;
+import podrouting.data.timed.ArcPurpose;
+import podrouting.data.timed.Path;
+import podrouting.data.timed.TimedArc;
 import podrouting.util.IOUtils;
 
 import java.io.File;
@@ -59,6 +62,8 @@ public class SummarizeMain implements Callable<Integer> {
     private final Map<String,Long> uniqueSolvers = new TreeMap<>();
     private final Map<Integer, Integer> vehicleCountToUniqueInstances = new LinkedHashMap<>();
     private final Map<Integer, Integer> passengerCountToUniqueInstances = new LinkedHashMap<>();
+    private final Map<PurposeSequence,Long> passengerSequenceCounts = new LinkedHashMap<>();
+    private final Map<PurposeSequence,Long> vehicleSequenceCounts = new LinkedHashMap<>();
     private final SortedMap<Integer,Integer> uniqueVehicleCapacities = new TreeMap<>();
     private final SortedMap<Integer,Integer> uniqueVehicleCounts = new TreeMap<>();
     private final SortedMap<Integer,Integer> uniquePassengerCounts = new TreeMap<>();
@@ -145,6 +150,8 @@ public class SummarizeMain implements Callable<Integer> {
         } else {
             log.warn("Solution file {} has null instance", sourceFile);
         }
+        solution.getPassengerPaths().forEach(p -> countSequences(p, passengerSequenceCounts));
+        solution.getVehiclePaths().forEach(p -> countSequences(p, vehicleSequenceCounts));
     }
 
     private void processInstance(Instance instance, String sourceFile) {
@@ -284,6 +291,18 @@ public class SummarizeMain implements Callable<Integer> {
             }
         }
 
+        if (!passengerSequenceCounts.isEmpty() || !vehicleSequenceCounts.isEmpty()) {
+            sb.append("\n\n=== Arc Purpose Sequence Frequencies ===");
+            for (var entry : passengerSequenceCounts.entrySet()) {
+                sb.append("\n Passenger "+entry.getKey()+" : " + entry.getValue()+" times");
+            }
+            for (var entry : vehicleSequenceCounts.entrySet()) {
+                sb.append("\n Vehicle "+entry.getKey()+" : " + entry.getValue()+" times");
+            }
+        }
+
+
+
         return sb.toString();
     }
 
@@ -305,6 +324,55 @@ public class SummarizeMain implements Callable<Integer> {
         @Override
         public int compareTo(TimeWindowPair other) {
             return NATURAL_ORDER.compare(this, other);
+        }
+    }
+
+    private void countSequences(Path<?> path, Map<PurposeSequence,Long> target) {
+        LinkedList<ArcPurpose> q = new LinkedList<>();
+        for (TimedArc ta : path.getPath()) {
+            q.add(ta.getPurpose());
+            if (q.size() == 3) {
+                PurposeSequence pq = PurposeSequence.from(q);
+                target.merge(pq, 1L, Long::sum);
+                q.removeFirst();
+                // Size is now two again
+            }
+            // Size is one or two
+            if (q.size() == 2) {
+                PurposeSequence pq = PurposeSequence.from(q);
+                target.merge(pq, 1L, Long::sum);
+            }
+        }
+    }
+
+    private record PurposeSequence(ArcPurpose step1, ArcPurpose step2, ArcPurpose step3) {
+
+        public static PurposeSequence from(List<ArcPurpose> lst) {
+            if (lst.size() < 2 || lst.size() > 3) {
+                throw new IllegalArgumentException("Only lists of size 2 or 3 are supported");
+            }
+            if (lst.size() == 2) {
+                return new PurposeSequence(lst.get(0), lst.get(1), null);
+            }
+            return new PurposeSequence(lst.get(0), lst.get(1), lst.get(2));
+        }
+
+        @Override
+        public String toString() {
+            StringBuilder sb = new StringBuilder();
+            if (step1 != null) {
+                sb.append(step1);
+            }
+            if (step2 != null) {
+                sb.append(" -> ");
+                sb.append(step2);
+
+            }
+            if (step3 != null) {
+                sb.append(" -> ");
+                sb.append(step3);
+            }
+            return sb.toString();
         }
     }
 
