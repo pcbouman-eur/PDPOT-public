@@ -183,7 +183,7 @@ public class AssignmentModelORTools {
 							varList.add(var);
 							records.add(new TransferRecord(pair, v1, v2, p, var));
 
-							// Is het correct dat we hier in beide gevallen pair.first hebben??
+							// Is it correct that we have pair.first in both cases here??
 
 							Pair<Vehicle, TimedArc> pred = new Pair<>(v2, pair.first);
 							List<Pair<Passenger, MPVariable>> temp1 =
